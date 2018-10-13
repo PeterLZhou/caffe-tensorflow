@@ -81,3 +81,30 @@ def shape_pool(node):
 def shape_inner_product(node):
     input_shape = node.get_only_parent().output_shape
     return TensorShape(input_shape.batch_size, node.layer.parameters.num_output, 1, 1)
+
+def flatten_shape(node):
+    shape1 = node.get_only_parent().output_shape
+
+    return TensorShape(shape1.batch_size,shape1.channels*shape1.height*shape1.width,1,1)
+
+def reshape_shape(node):
+
+    input_shape = node.get_only_parent().output_shape
+    input_shape_pr = input_shape.channels*input_shape.height*input_shape.width
+    input_shape_arr = [input_shape.batch_size,input_shape.channels,input_shape.height,input_shape.width]
+    pr = 1
+    axes = node.parameters.shape.dim
+    new_shape = [input_shape.batch_size,1,1,1]
+    for j in range(1,len(axes)):
+        if axes[j] == 0:
+            new_shape[j] = input_shape_arr[j]
+            pr *= new_shape[j]
+        elif not axes[j] == -1:
+            new_shape[j] = int(axes[j])
+            pr *= new_shape[j]
+        elif axes[j] == -1:
+            new_shape[j] = -1
+    for j in range(1,len(new_shape)):
+        if new_shape[j] == -1:
+            new_shape[j] = int(input_shape_pr/pr)
+    return TensorShape(new_shape[0],new_shape[1],new_shape[2],new_shape[3])
